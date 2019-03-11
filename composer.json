@@ -1,0 +1,24 @@
+{
+    "name": "sandreas/php-time",
+    "description": "composer repository for date and time utility classes.",
+    "keywords": ["date", "time", "datetime"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Andreas",
+            "email": "sandreas@posteo.de"
+        }
+    ],
+    "type": "project",
+    "require": {
+		"php": ">=7.1"
+    },
+    "require-dev": {
+		"phpunit/phpunit": "6.*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Sandreas\\": "src/Sandreas"
+        }
+    }
+}
