@@ -1,4 +1,5 @@
 <?php
+
 namespace Sandreas\Time;
 
 use PHPUnit\Framework\TestCase;
@@ -46,7 +47,8 @@ class TimeUnitTest extends TestCase
     /**
      * @expectedException \Exception
      */
-    public function testFormatException() {
+    public function testFormatException()
+    {
         $reference = 36001433;
         $subject = new TimeUnit($reference, TimeUnit::MILLISECOND);
         $subject->format("i%nvalid format");
@@ -97,7 +99,8 @@ class TimeUnitTest extends TestCase
     /**
      * @throws \Exception
      */
-    public function testJsonSerialize() {
+    public function testJsonSerialize()
+    {
         $subject = TimeUnit::fromFormat("10:00:01.433", TimeUnit::FORMAT_H_I_S_v);
         $this->assertEquals(36001433, $subject->jsonSerialize());
     }
@@ -105,8 +108,61 @@ class TimeUnitTest extends TestCase
     /**
      * @throws \Exception
      */
-    public function testToString() {
+    public function testToString()
+    {
         $subject = TimeUnit::fromFormat("10:00:01.433", TimeUnit::FORMAT_H_I_S_v);
         $this->assertEquals("36001433", $subject->__toString());
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function testParseFormatString()
+    {
+        $subject = new TimeUnit();
+        $expected = [
+            0 => "H",
+            3 => "I",
+            6 => "S",
+            9 => "V",
+        ];
+
+
+        $this->assertEquals($expected, $subject->parseformatString2("%H:%I:%S.%V"));
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function testBuildTimeValues()
+    {
+        $subject = new TimeUnit(36001433);
+        $placeHolderPositions = $subject->parseformatString2("%H:%I:%S.%V");
+        $this->assertEquals([
+            TimeUnit::HOUR => 10.0,
+            TimeUnit::MINUTE => 0.0,
+            TimeUnit::SECOND => 1.0,
+            TimeUnit::MILLISECOND => 433.0,
+
+        ], $subject->buildTimeValues($placeHolderPositions));
+
+        $placeHolderPositions = $subject->parseformatString2("%I:%S.%V");
+        $this->assertEquals([
+            TimeUnit::HOUR => 0,
+            TimeUnit::MINUTE => 600.0,
+            TimeUnit::SECOND => 1.0,
+            TimeUnit::MILLISECOND => 433.0,
+
+        ], $subject->buildTimeValues($placeHolderPositions));
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function testFormat2()
+    {
+        $subject = new TimeUnit(36001433);
+        $this->assertEquals("10:00:01.433", $subject->format2("%H:%I:%S.%V"));
+        $this->assertEquals("600:01.433", $subject->format2("%I:%S.%V"));
     }
 }
