@@ -7,6 +7,7 @@ use JsonSerializable;
 
 class TimeUnit implements JsonSerializable
 {
+
     const MILLISECOND = 1;
     const SECOND = 1000;
     const MINUTE = 60000;
@@ -14,6 +15,10 @@ class TimeUnit implements JsonSerializable
 
     const FORMAT_DEFAULT = "%H:%I:%S.%V";
     const FORMAT_H_I_S_v = "%H:%I:%S.%v";
+
+    const REGEX_DELIMITER = '#';
+    const ESCAPE_CHARACTER = '%';
+
     const UNIT_REFERENCE = [
         "H" => self::HOUR,
         "h" => self::HOUR,
@@ -27,7 +32,6 @@ class TimeUnit implements JsonSerializable
     ];
 
     const FORMAT_REFERENCE = [
-
         "H" => "%02d",
         "h" => "%d",
         "I" => "%02d",
@@ -41,38 +45,19 @@ class TimeUnit implements JsonSerializable
     ];
 
     const REGEX_MAPPING = [
-        '%H' => '(?P<H>[0-9]+)',
-        '%h' => '(?P<h>[0-9]+)',
-        '%I' => '(?P<M>[0-9]+)',
-        '%i' => '(?P<m>[0-9]+)',
-        '%S' => '(?P<S>[0-9]+)',
-        '%s' => '(?P<s>[0-9]+)',
-        '%V' => '(?P<V>[0-9]+)',
-        '%v' => '(?P<v>[0-9]{1,3})',
+        'H' => '(?P<H>[0-9]+)',
+        'h' => '(?P<h>[0-9]+)',
+        'I' => '(?P<M>[0-9]+)',
+        'i' => '(?P<m>[0-9]+)',
+        'S' => '(?P<S>[0-9]+)',
+        's' => '(?P<s>[0-9]+)',
+        'V' => '(?P<V>[0-9]+)',
+        'v' => '(?P<v>[0-9]+)',
     ];
-    const REGEX_DELIMITER = '#';
-    const ESCAPE_CHARACTER = '%';
 
-    protected $sprintfFormatReference = [
-        "H" => "%02d",
-        "h" => "%d",
-        "I" => "%02d",
-        "i" => "%d",
-        "S" => "%02d",
-        "s" => "%d",
-        // milliseconds
-        "V" => "%03d",
-        "v" => "%d",
-    ];
+
+    /** @var float|int */
     protected $milliseconds;
-    /**
-     * @var array
-     */
-    protected $formatsOrder;
-    /**
-     * @var string
-     */
-    protected $vsprintfString = '';
 
     public function __construct($value = 0, $unit = self::MILLISECOND)
     {
@@ -80,42 +65,33 @@ class TimeUnit implements JsonSerializable
     }
 
     /**
-     * @param $timeString
-     * @param $format
+     * @param $timeUnitAsString
+     * @param $formatString
      *
      * @return TimeUnit
      * @throws Exception
      */
-    public static function fromFormat($date, $format)
+    public static function fromFormat($timeUnitAsString, $formatString)
     {
-        /*
+        $quotedFormatString = preg_quote($formatString, static::REGEX_DELIMITER);
+        $placeHolderPositions = static::parsePlaceHolderPositions($quotedFormatString);
+        $basePattern = static::replacePlaceHolders($quotedFormatString, $placeHolderPositions, static::REGEX_MAPPING);
 
-        $quotedFormat = preg_quote($format, static::REGEX_DELIMITER);
-        $placeholderPositions = static::parseFormatString($format);
-
-        $basePattern = "";
-        $lastPosition = 0;
-        foreach ($placeholderPositions as $position => $placeHolder) {
-            $placeHolderPattern = static::REGEX_MAPPING[$placeHolder];
-
-            $length = $position - $lastPosition;
-            $basePattern .= mb_substr($quotedFormat, $lastPosition, $length);
-            $basePattern .= $placeHolderPattern;
-            $lastPosition = $position + 2;
-        }
-        die($basePattern);
-        // $basePattern = strtr($quotedFormat, static::REGEX_MAPPING);
-        $placeHolderPattern = static::REGEX_DELIMITER . $basePattern . static::REGEX_DELIMITER;
-
-         */
-
-        $quotedFormat = preg_quote($format, static::REGEX_DELIMITER);
-        $basePattern = strtr($quotedFormat, static::REGEX_MAPPING);
         $pattern = static::REGEX_DELIMITER . $basePattern . static::REGEX_DELIMITER;
 
-        if (!preg_match($pattern, $date, $matches)) {
-            throw new Exception('Invalid format string, please use only valid placeholders');
+        $previous = null;
+        try {
+            $regexMatches = preg_match($pattern, $timeUnitAsString, $matches);
+        } catch (\Throwable $e) {
+            $regexMatches = false;
+            $previous = $e;
         }
+
+        if (!$regexMatches) {
+            throw new Exception('Invalid format string (no match or invalid pattern <' . $pattern . '>)', 0, $previous);
+        }
+
+
 
         if (isset($matches["V"]) && strlen($matches["V"]) != 3) {
             $matches["V"] = str_pad($matches["V"], 3, "0");
@@ -143,27 +119,11 @@ class TimeUnit implements JsonSerializable
         $this->milliseconds += $value * $unit;
     }
 
-    /**
-     * Specify data which should be serialized to JSON
-     * @link https://php.net/manual/en/jsonserializable.jsonserialize.php
-     * @return mixed data which can be serialized by <b>json_encode</b>,
-     * which is a value of any type other than a resource.
-     * @since 5.4.0
-     */
-    public function jsonSerialize()
-    {
-        return $this->milliseconds();
-    }
-
     public function milliseconds()
     {
         return $this->milliseconds;
     }
 
-    public function __toString()
-    {
-        return (string)$this->milliseconds();
-    }
 
     /**
      * @param $formatString
@@ -172,7 +132,7 @@ class TimeUnit implements JsonSerializable
      */
     public function format($formatString)
     {
-        $placeholderPositions = $this->parseFormatString($formatString);
+        $placeholderPositions = $this->parsePlaceHolderPositions($formatString);
         $timeValues = $this->buildTimeValues($placeholderPositions);
 
         $placeHolderReplacementValues = [];
@@ -186,7 +146,7 @@ class TimeUnit implements JsonSerializable
         return $prefix . $this->replacePlaceHolders($formatString, $placeholderPositions, $placeHolderReplacementValues);
     }
 
-    protected function replacePlaceHolders($formatString, $placeholderPositions, $placeHolderReplacementValues)
+    protected static function replacePlaceHolders($formatString, $placeholderPositions, $placeHolderReplacementValues)
     {
         $formatted = "";
         $lastPosition = 0;
@@ -196,6 +156,11 @@ class TimeUnit implements JsonSerializable
             $formatted .= $placeHolderReplacementValues[$placeHolder];
             $lastPosition = $position + 2;
         }
+
+        if ($lastPosition < mb_strlen($formatString)) {
+            $formatted .= mb_substr($formatString, $lastPosition);
+        }
+        $formatted = str_replace(static::ESCAPE_CHARACTER . static::ESCAPE_CHARACTER, static::ESCAPE_CHARACTER, $formatted);
         return $formatted;
     }
 
@@ -204,13 +169,17 @@ class TimeUnit implements JsonSerializable
      * @return array
      * @throws Exception
      */
-    protected static function parseFormatString($formatString)
+    protected static function parsePlaceHolderPositions($formatString)
     {
         $runes = preg_split('//u', $formatString, -1, PREG_SPLIT_NO_EMPTY);
         $len = count($runes);
         $placeholderPositions = [];
         for ($i = 0; $i < $len; $i++) {
-            if ($runes[$i] === "%" && ($i == 0 || $runes[$i - 1] !== "%")) {
+            if ($runes[$i] === "%") {
+                if (($runes[$i + 1] ?? "") === "%") {
+                    $i += 1;
+                    continue;
+                }
                 $placeholderPositions[$i] = static::ensureValidPlaceHolder($runes[$i + 1] ?? null);
             }
         }
@@ -225,8 +194,12 @@ class TimeUnit implements JsonSerializable
      */
     protected static function ensureValidPlaceHolder($placeHolder)
     {
-        if ($placeHolder === null || !isset(static::UNIT_REFERENCE[$placeHolder])) {
-            throw new Exception("Invalid format string, <" . ($placeHolder ?? "empty") . "> placeholder is not allowed");
+        if ($placeHolder === null) {
+            throw new Exception("Invalid format string (placeholder <%> is not allowed - please use %% for a % sign)");
+        }
+
+        if (!isset(static::UNIT_REFERENCE[$placeHolder])) {
+            throw new Exception("Invalid format string (placeholder <%" . $placeHolder . "> is not allowed)");
         }
         return $placeHolder;
     }
@@ -251,4 +224,21 @@ class TimeUnit implements JsonSerializable
         return $timeValues;
     }
 
+
+    /**
+     * Specify data which should be serialized to JSON
+     * @link https://php.net/manual/en/jsonserializable.jsonserialize.php
+     * @return mixed data which can be serialized by <b>json_encode</b>,
+     * which is a value of any type other than a resource.
+     * @since 5.4.0
+     */
+    public function jsonSerialize()
+    {
+        return $this->milliseconds();
+    }
+
+    public function __toString()
+    {
+        return (string)$this->jsonSerialize();
+    }
 }

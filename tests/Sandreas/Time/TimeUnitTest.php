@@ -42,6 +42,12 @@ class TimeUnitTest extends TestCase
         $this->assertEquals("25501.433", $subject->format('%s.%v'));
         $this->assertEquals("425:01.433", $subject->format('%i:%S.%v'));
         $this->assertEquals("07:05:01.433", $subject->format(TimeUnit::FORMAT_H_I_S_v));
+
+
+        $subject = new TimeUnit(36001433);
+        $this->assertEquals("10:00:01.433", $subject->format("%H:%I:%S.%V"));
+        $this->assertEquals("600:01.433", $subject->format("%I:%S.%V"));
+
     }
 
     /**
@@ -89,12 +95,49 @@ class TimeUnitTest extends TestCase
 
     /**
      * @expectedException \Exception
+     * @expectedExceptionMessage Invalid format string (placeholder <%n> is not allowed)
      */
-    public function testFromFormatException()
+    public function testFromFormatInvalidPlaceholderException()
     {
-        TimeUnit::fromFormat("10:00:01.433", "invalid format");
+        TimeUnit::fromFormat("10:00:01.433", "i%nvalid format");
     }
 
+    /**
+     * @expectedException \Exception
+     * @expectedExceptionMessage Invalid format string (no match or invalid pattern <#(?P<H>[0-9]+)(?P<H>[0-9]+)(?P<H>[0-9]+)#>)
+     */
+    public function testFromFormatInvalidFormatStringException()
+    {
+        TimeUnit::fromFormat("10:00:01.433", "%H%H%H");
+    }
+
+
+    /**
+     * @expectedException \Exception
+     * @expectedExceptionMessage Invalid format string (placeholder <%> is not allowed - please use %% for a % sign)
+     */
+    public function testFromFormatInvalidFormatEmptyPlaceholderException()
+    {
+        TimeUnit::fromFormat("10:00:01.433", "%");
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function testFromFormatPercentEscaping()
+    {
+        $subject = TimeUnit::fromFormat("%300%", "%%%v%%");
+        $this->assertEquals(300, $subject->milliseconds());
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function testFormatPercentEscaping()
+    {
+        $subject = new TimeUnit(300);
+        $this->assertEquals("%300%", $subject->format("%%%v%%"));
+    }
 
     /**
      * @throws \Exception
@@ -115,13 +158,4 @@ class TimeUnitTest extends TestCase
     }
 
 
-    /**
-     * @throws \Exception
-     */
-    public function testFormat2()
-    {
-        $subject = new TimeUnit(36001433);
-        $this->assertEquals("10:00:01.433", $subject->format("%H:%I:%S.%V"));
-        $this->assertEquals("600:01.433", $subject->format("%I:%S.%V"));
-    }
 }
