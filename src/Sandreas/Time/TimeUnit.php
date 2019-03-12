@@ -51,6 +51,8 @@ class TimeUnit implements JsonSerializable
         '%v' => '(?P<v>[0-9]{1,3})',
     ];
     const REGEX_DELIMITER = '#';
+    const ESCAPE_CHARACTER = '%';
+
     protected $sprintfFormatReference = [
         "H" => "%02d",
         "h" => "%d",
@@ -78,7 +80,7 @@ class TimeUnit implements JsonSerializable
     }
 
     /**
-     * @param $date
+     * @param $timeString
      * @param $format
      *
      * @return TimeUnit
@@ -86,6 +88,27 @@ class TimeUnit implements JsonSerializable
      */
     public static function fromFormat($date, $format)
     {
+        /*
+
+        $quotedFormat = preg_quote($format, static::REGEX_DELIMITER);
+        $placeholderPositions = static::parseFormatString($format);
+
+        $basePattern = "";
+        $lastPosition = 0;
+        foreach ($placeholderPositions as $position => $placeHolder) {
+            $placeHolderPattern = static::REGEX_MAPPING[$placeHolder];
+
+            $length = $position - $lastPosition;
+            $basePattern .= mb_substr($quotedFormat, $lastPosition, $length);
+            $basePattern .= $placeHolderPattern;
+            $lastPosition = $position + 2;
+        }
+        die($basePattern);
+        // $basePattern = strtr($quotedFormat, static::REGEX_MAPPING);
+        $placeHolderPattern = static::REGEX_DELIMITER . $basePattern . static::REGEX_DELIMITER;
+
+         */
+
         $quotedFormat = preg_quote($format, static::REGEX_DELIMITER);
         $basePattern = strtr($quotedFormat, static::REGEX_MAPPING);
         $pattern = static::REGEX_DELIMITER . $basePattern . static::REGEX_DELIMITER;
@@ -121,83 +144,6 @@ class TimeUnit implements JsonSerializable
     }
 
     /**
-     * @param $formatString
-     * @return string
-     * @throws Exception
-     */
-    public function format($formatString)
-    {
-        $this->parseFormatString($formatString, $this->sprintfFormatReference);
-        $usedUnits = [
-            static::HOUR => false,
-            static::MINUTE => false,
-            static::SECOND => false,
-            static::MILLISECOND => false,
-        ];
-        $unitsOrder = [];
-        foreach ($this->formatsOrder as $format) {
-            $unit = static::UNIT_REFERENCE[$format];
-            $unitsOrder[] = $unit;
-            $usedUnits[$unit] = true;
-        }
-        $tempMilliseconds = abs($this->milliseconds);
-        $timeValues = [];
-        foreach ($usedUnits as $unit => $isUsed) {
-            if (!$isUsed) {
-                $timeValues[$unit] = 0;
-                continue;
-            }
-            $timeValues[$unit] = floor($tempMilliseconds / $unit);
-            $tempMilliseconds -= $timeValues[$unit] * $unit;
-        }
-        $vsprintfParameters = [];
-        foreach ($unitsOrder as $unit) {
-            $vsprintfParameters[] = $timeValues[$unit];
-        }
-        $prefix = "";
-        if ($this->milliseconds < 0) {
-            $prefix = "-";
-        }
-
-        return $prefix . vsprintf($this->vsprintfString, $vsprintfParameters);
-    }
-
-    /**
-     * @param $formatString
-     * @param $formatReference
-     *
-     * @return void
-     * @throws Exception
-     */
-    private function parseFormatString($formatString, $formatReference)
-    {
-        $this->vsprintfString = '';
-        $this->formatsOrder = [];
-        for ($i = 0; $i < strlen($formatString); $i++) {
-            if ($formatString[$i] !== "%") {
-                $this->vsprintfString .= $formatString[$i];
-                continue;
-            }
-            $format = $formatString[++$i];
-            $this->formatsOrder[] = $format;
-            $this->ensureValidFormat($format, $formatReference);
-            $this->vsprintfString .= $formatReference[$format];
-        }
-    }
-
-    /**
-     * @param $param
-     * @param $formatReference
-     * @throws Exception
-     */
-    private function ensureValidFormat($param, $formatReference)
-    {
-        if (!isset($formatReference[$param])) {
-            throw new Exception('Invalid format string, please use only valid placeholders');
-        }
-    }
-
-    /**
      * Specify data which should be serialized to JSON
      * @link https://php.net/manual/en/jsonserializable.jsonserialize.php
      * @return mixed data which can be serialized by <b>json_encode</b>,
@@ -221,30 +167,71 @@ class TimeUnit implements JsonSerializable
 
     /**
      * @param $formatString
+     * @return string
+     * @throws Exception
+     */
+    public function format($formatString)
+    {
+        $placeholderPositions = $this->parseFormatString($formatString);
+        $timeValues = $this->buildTimeValues($placeholderPositions);
+
+        $placeHolderReplacementValues = [];
+        foreach ($placeholderPositions as $position => $placeHolder) {
+            $unit = static::UNIT_REFERENCE[$placeHolder];
+            $format = static::FORMAT_REFERENCE[$placeHolder];
+            $placeHolderReplacementValues[$placeHolder] = sprintf($format, $timeValues[$unit]);
+        }
+
+        $prefix = ($this->milliseconds < 0) ? "-" : "";
+        return $prefix . $this->replacePlaceHolders($formatString, $placeholderPositions, $placeHolderReplacementValues);
+    }
+
+    protected function replacePlaceHolders($formatString, $placeholderPositions, $placeHolderReplacementValues)
+    {
+        $formatted = "";
+        $lastPosition = 0;
+        foreach ($placeholderPositions as $position => $placeHolder) {
+            $length = $position - $lastPosition;
+            $formatted .= mb_substr($formatString, $lastPosition, $length);
+            $formatted .= $placeHolderReplacementValues[$placeHolder];
+            $lastPosition = $position + 2;
+        }
+        return $formatted;
+    }
+
+    /**
+     * @param $formatString
      * @return array
      * @throws Exception
      */
-    public function parseformatString2($formatString)
+    protected static function parseFormatString($formatString)
     {
         $runes = preg_split('//u', $formatString, -1, PREG_SPLIT_NO_EMPTY);
         $len = count($runes);
         $placeholderPositions = [];
         for ($i = 0; $i < $len; $i++) {
-            $currentRune = $runes[$i];
-            if ($currentRune === "\\") {
-                $i++;
-                continue;
-            }
-
-            if ($currentRune === "%") {
-                $placeholderPositions[$i] = $this->ensureValidPlaceHolder($runes[$i + 1] ?? null);
+            if ($runes[$i] === "%" && ($i == 0 || $runes[$i - 1] !== "%")) {
+                $placeholderPositions[$i] = static::ensureValidPlaceHolder($runes[$i + 1] ?? null);
             }
         }
 
         return $placeholderPositions;
     }
 
-    public function buildTimeValues($placeHolderPositions)
+    /**
+     * @param $placeHolder
+     * @return array
+     * @throws Exception
+     */
+    protected static function ensureValidPlaceHolder($placeHolder)
+    {
+        if ($placeHolder === null || !isset(static::UNIT_REFERENCE[$placeHolder])) {
+            throw new Exception("Invalid format string, <" . ($placeHolder ?? "empty") . "> placeholder is not allowed");
+        }
+        return $placeHolder;
+    }
+
+    protected function buildTimeValues($placeHolderPositions)
     {
 
         $tempMilliseconds = abs($this->milliseconds);
@@ -262,59 +249,6 @@ class TimeUnit implements JsonSerializable
             $tempMilliseconds -= $timeValues[$unit] * $unit;
         }
         return $timeValues;
-
-//        foreach ($timeValues as $unit => $value) {
-//
-//            if (!in_array($unit, $placeHolderPositions, true)) {
-//                continue;
-//            }
-//            $timeValues[$unit] = floor($tempMilliseconds / $unit);
-//            $tempMilliseconds -= $timeValues[$unit] * $unit;
-//        }
-//
-//        return $timeValues;
     }
 
-    /**
-     * @param $formatString
-     * @return string
-     * @throws Exception
-     */
-    public function format2($formatString)
-    {
-
-        $formatted = "";
-        if ($this->milliseconds < 0) {
-            $formatted = "-";
-        }
-
-        $placeholderPositions = $this->parseFormatString2($formatString);
-        $timeValues = $this->buildTimeValues($placeholderPositions);
-
-        $lastPosition = 0;
-        foreach ($placeholderPositions as $position => $placeHolder) {
-            $unit = static::UNIT_REFERENCE[$placeHolder];
-            $format = static::FORMAT_REFERENCE[$placeHolder];
-            $length = $position - $lastPosition;
-            $formatted .= mb_substr($formatString, $lastPosition, $length);
-            $formatted .= sprintf($format, $timeValues[$unit]);
-            $lastPosition = $position + 2;
-        }
-
-        return $formatted;
-    }
-
-
-    /**
-     * @param $placeHolder
-     * @return array
-     * @throws Exception
-     */
-    private function ensureValidPlaceHolder($placeHolder)
-    {
-        if ($placeHolder === null || !isset(static::UNIT_REFERENCE[$placeHolder])) {
-            throw new Exception("Invalid format string, <" . ($placeHolder ?? "empty") . "> placeholder is not allowed");
-        }
-        return $placeHolder;
-    }
 }

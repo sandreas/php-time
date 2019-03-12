@@ -114,47 +114,6 @@ class TimeUnitTest extends TestCase
         $this->assertEquals("36001433", $subject->__toString());
     }
 
-    /**
-     * @throws \Exception
-     */
-    public function testParseFormatString()
-    {
-        $subject = new TimeUnit();
-        $expected = [
-            0 => "H",
-            3 => "I",
-            6 => "S",
-            9 => "V",
-        ];
-
-
-        $this->assertEquals($expected, $subject->parseformatString2("%H:%I:%S.%V"));
-    }
-
-    /**
-     * @throws \Exception
-     */
-    public function testBuildTimeValues()
-    {
-        $subject = new TimeUnit(36001433);
-        $placeHolderPositions = $subject->parseformatString2("%H:%I:%S.%V");
-        $this->assertEquals([
-            TimeUnit::HOUR => 10.0,
-            TimeUnit::MINUTE => 0.0,
-            TimeUnit::SECOND => 1.0,
-            TimeUnit::MILLISECOND => 433.0,
-
-        ], $subject->buildTimeValues($placeHolderPositions));
-
-        $placeHolderPositions = $subject->parseformatString2("%I:%S.%V");
-        $this->assertEquals([
-            TimeUnit::HOUR => 0,
-            TimeUnit::MINUTE => 600.0,
-            TimeUnit::SECOND => 1.0,
-            TimeUnit::MILLISECOND => 433.0,
-
-        ], $subject->buildTimeValues($placeHolderPositions));
-    }
 
     /**
      * @throws \Exception
@@ -162,7 +121,7 @@ class TimeUnitTest extends TestCase
     public function testFormat2()
     {
         $subject = new TimeUnit(36001433);
-        $this->assertEquals("10:00:01.433", $subject->format2("%H:%I:%S.%V"));
-        $this->assertEquals("600:01.433", $subject->format2("%I:%S.%V"));
+        $this->assertEquals("10:00:01.433", $subject->format("%H:%I:%S.%V"));
+        $this->assertEquals("600:01.433", $subject->format("%I:%S.%V"));
     }
 }
