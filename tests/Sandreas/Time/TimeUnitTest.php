@@ -28,25 +28,25 @@ class TimeUnitTest extends TestCase
         $reference = 36001433;
         $subject = new TimeUnit($reference, TimeUnit::MILLISECOND);
 
-        $this->assertEquals($reference, $subject->format('%v'));
-        $this->assertEquals("36001.433", $subject->format('%s.%v'));
-        $this->assertEquals("600:1.433", $subject->format('%i:%s.%v'));
-        $this->assertEquals("10:0:1.433", $subject->format('%h:%i:%s.%v'));
+        $this->assertEquals($reference, $subject->format('%L'));
+        $this->assertEquals("36001.433", $subject->format('%s.%L'));
+        $this->assertEquals("600:1.433", $subject->format('%m:%s.%L'));
+        $this->assertEquals("10:0:1.433", $subject->format('%h:%m:%s.%L'));
 
         $subject->add(5, TimeUnit::MINUTE);
-        $this->assertEquals("36301.433", $subject->format('%s.%v'));
-        $this->assertEquals("605:1.433", $subject->format('%i:%s.%v'));
-        $this->assertEquals("10:5:1.433", $subject->format('%h:%i:%s.%v'));
+        $this->assertEquals("36301.433", $subject->format('%s.%L'));
+        $this->assertEquals("605:1.433", $subject->format('%m:%s.%L'));
+        $this->assertEquals("10:5:1.433", $subject->format('%h:%m:%s.%L'));
 
         $subject->add(-3, TimeUnit::HOUR);
-        $this->assertEquals("25501.433", $subject->format('%s.%v'));
-        $this->assertEquals("425:01.433", $subject->format('%i:%S.%v'));
+        $this->assertEquals("25501.433", $subject->format('%s.%L'));
+        $this->assertEquals("425:01.433", $subject->format('%m:%S.%L'));
         $this->assertEquals("07:05:01.433", $subject->format(TimeUnit::FORMAT_DEFAULT));
 
 
         $subject = new TimeUnit(36001433);
-        $this->assertEquals("10:00:01.433", $subject->format("%H:%I:%S.%V"));
-        $this->assertEquals("600:01.433", $subject->format("%I:%S.%V"));
+        $this->assertEquals("10:00:01.433", $subject->format(TimeUnit::FORMAT_DEFAULT));
+        $this->assertEquals("600:01.433", $subject->format("%M:%S.%L"));
 
     }
 
@@ -66,9 +66,9 @@ class TimeUnitTest extends TestCase
     public function testFormatNegative()
     {
         $subject = new TimeUnit(-3327, TimeUnit::MILLISECOND);
-        $this->assertEquals("-3327", $subject->format('%v'));
-        $this->assertEquals("-3.327", $subject->format('%s.%v'));
-        $this->assertEquals("-00:00:03.327", $subject->format('%H:%I:%S.%V'));
+        $this->assertEquals("-3327", $subject->format('%L'));
+        $this->assertEquals("-3.327", $subject->format('%s.%L'));
+        $this->assertEquals("-00:00:03.327", $subject->format(TimeUnit::FORMAT_DEFAULT));
     }
 
     /**
@@ -80,15 +80,15 @@ class TimeUnitTest extends TestCase
         $this->assertNotNull($subject);
         $this->assertEquals(36001433, $subject->milliseconds());
 
-        $subject = TimeUnit::fromFormat("02.433", '%S.%v');
+        $subject = TimeUnit::fromFormat("02.433", '%S.%L');
         $this->assertNotNull($subject);
         $this->assertEquals(2433, $subject->milliseconds());
 
-        $subject = TimeUnit::fromFormat("00.08", '%S.%V');
+        $subject = TimeUnit::fromFormat("00.08", '%S.%L');
         $this->assertNotNull($subject);
         $this->assertEquals(80, $subject->milliseconds());
 
-        $subject = TimeUnit::fromFormat("00.08", '%S.%v');
+        $subject = TimeUnit::fromFormat("00.08", '%S.%l');
         $this->assertNotNull($subject);
         $this->assertEquals(8, $subject->milliseconds());
     }
@@ -126,7 +126,7 @@ class TimeUnitTest extends TestCase
      */
     public function testFromFormatPercentEscaping()
     {
-        $subject = TimeUnit::fromFormat("%300%", "%%%v%%");
+        $subject = TimeUnit::fromFormat("%300%", "%%%L%%");
         $this->assertEquals(300, $subject->milliseconds());
     }
 
@@ -136,7 +136,7 @@ class TimeUnitTest extends TestCase
     public function testFormatPercentEscaping()
     {
         $subject = new TimeUnit(300);
-        $this->assertEquals("%300%", $subject->format("%%%v%%"));
+        $this->assertEquals("%300%", $subject->format("%%%L%%"));
     }
 
     /**

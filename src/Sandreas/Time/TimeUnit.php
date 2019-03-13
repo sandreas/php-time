@@ -13,45 +13,52 @@ class TimeUnit implements JsonSerializable
     const MINUTE = 60000;
     const HOUR = 3600000;
 
-    const FORMAT_DEFAULT = "%H:%I:%S.%V";
+    const FORMAT_DEFAULT = "%H:%M:%S.%L";
+
+    const PLACEHOLDER_HOUR = "H";
+    const PLACEHOLDER_HOUR_INT = "h";
+    const PLACEHOLDER_MINUTE = "M";
+    const PLACEHOLDER_MINUTE_INT = "m";
+    const PLACEHOLDER_SECOND = "S";
+    const PLACEHOLDER_SECOND_INT = "s";
+    const PLACEHOLDER_MILLISECOND = "L";
+    const PLACEHOLDER_MILLISECOND_INT = "l";
 
     const REGEX_DELIMITER = '#';
     const ESCAPE_CHARACTER = '%';
 
     const UNIT_REFERENCE = [
-        "H" => self::HOUR,
-        "h" => self::HOUR,
-        "I" => self::MINUTE,
-        "i" => self::MINUTE,
-        "S" => self::SECOND,
-        "s" => self::SECOND,
-        // milliseconds
-        "V" => self::MILLISECOND,
-        "v" => self::MILLISECOND,
+        self::PLACEHOLDER_HOUR => self::HOUR,
+        self::PLACEHOLDER_HOUR_INT => self::HOUR,
+        self::PLACEHOLDER_MINUTE => self::MINUTE,
+        self::PLACEHOLDER_MINUTE_INT => self::MINUTE,
+        self::PLACEHOLDER_SECOND => self::SECOND,
+        self::PLACEHOLDER_SECOND_INT => self::SECOND,
+        self::PLACEHOLDER_MILLISECOND => self::MILLISECOND,
+        self::PLACEHOLDER_MILLISECOND_INT => self::MILLISECOND,
     ];
 
     const FORMAT_REFERENCE = [
-        "H" => "%02d",
-        "h" => "%d",
-        "I" => "%02d",
-        "i" => "%d",
-        "S" => "%02d",
-        "s" => "%d",
-        // milliseconds
-        "V" => "%03d",
-        "v" => "%d",
+        self::PLACEHOLDER_HOUR => "%02d",
+        self::PLACEHOLDER_HOUR_INT => "%d",
+        self::PLACEHOLDER_MINUTE => "%02d",
+        self::PLACEHOLDER_MINUTE_INT => "%d",
+        self::PLACEHOLDER_SECOND => "%02d",
+        self::PLACEHOLDER_SECOND_INT => "%d",
+        self::PLACEHOLDER_MILLISECOND => "%03d",
+        self::PLACEHOLDER_MILLISECOND_INT => "%d",
 
     ];
 
     const REGEX_MAPPING = [
-        'H' => '(?P<H>[0-9]+)',
-        'h' => '(?P<h>[0-9]+)',
-        'I' => '(?P<M>[0-9]+)',
-        'i' => '(?P<m>[0-9]+)',
-        'S' => '(?P<S>[0-9]+)',
-        's' => '(?P<s>[0-9]+)',
-        'V' => '(?P<V>[0-9]+)',
-        'v' => '(?P<v>[0-9]+)',
+        self::PLACEHOLDER_HOUR => "(?P<H>[0-9]+)",
+        self::PLACEHOLDER_HOUR_INT => "(?P<h>[0-9]+)",
+        self::PLACEHOLDER_MINUTE => "(?P<M>[0-9]+)",
+        self::PLACEHOLDER_MINUTE_INT => "(?P<m>[0-9]+)",
+        self::PLACEHOLDER_SECOND => "(?P<S>[0-9]+)",
+        self::PLACEHOLDER_SECOND_INT => "(?P<s>[0-9]+)",
+        self::PLACEHOLDER_MILLISECOND => "(?P<L>[0-9]+)",
+        self::PLACEHOLDER_MILLISECOND_INT => "(?P<l>[0-9]+)",
     ];
 
 
@@ -91,9 +98,8 @@ class TimeUnit implements JsonSerializable
         }
 
 
-
-        if (isset($matches["V"]) && strlen($matches["V"]) != 3) {
-            $matches["V"] = str_pad($matches["V"], 3, "0");
+        if (isset($matches[self::PLACEHOLDER_MILLISECOND]) && strlen($matches[self::PLACEHOLDER_MILLISECOND]) != 3) {
+            $matches[self::PLACEHOLDER_MILLISECOND] = str_pad($matches[self::PLACEHOLDER_MILLISECOND], 3, "0");
         }
 
         $milliseconds = 0;
