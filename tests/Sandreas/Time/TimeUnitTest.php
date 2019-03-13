@@ -41,7 +41,7 @@ class TimeUnitTest extends TestCase
         $subject->add(-3, TimeUnit::HOUR);
         $this->assertEquals("25501.433", $subject->format('%s.%v'));
         $this->assertEquals("425:01.433", $subject->format('%i:%S.%v'));
-        $this->assertEquals("07:05:01.433", $subject->format(TimeUnit::FORMAT_H_I_S_v));
+        $this->assertEquals("07:05:01.433", $subject->format(TimeUnit::FORMAT_DEFAULT));
 
 
         $subject = new TimeUnit(36001433);
@@ -76,7 +76,7 @@ class TimeUnitTest extends TestCase
      */
     public function testFromFormat()
     {
-        $subject = TimeUnit::fromFormat("10:00:01.433", TimeUnit::FORMAT_H_I_S_v);
+        $subject = TimeUnit::fromFormat("10:00:01.433", TimeUnit::FORMAT_DEFAULT);
         $this->assertNotNull($subject);
         $this->assertEquals(36001433, $subject->milliseconds());
 
@@ -144,7 +144,7 @@ class TimeUnitTest extends TestCase
      */
     public function testJsonSerialize()
     {
-        $subject = TimeUnit::fromFormat("10:00:01.433", TimeUnit::FORMAT_H_I_S_v);
+        $subject = TimeUnit::fromFormat("10:00:01.433", TimeUnit::FORMAT_DEFAULT);
         $this->assertEquals(36001433, $subject->jsonSerialize());
     }
 
@@ -153,7 +153,7 @@ class TimeUnitTest extends TestCase
      */
     public function testToString()
     {
-        $subject = TimeUnit::fromFormat("10:00:01.433", TimeUnit::FORMAT_H_I_S_v);
+        $subject = TimeUnit::fromFormat("10:00:01.433", TimeUnit::FORMAT_DEFAULT);
         $this->assertEquals("36001433", $subject->__toString());
     }
 

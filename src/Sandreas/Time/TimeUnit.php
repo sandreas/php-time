@@ -14,7 +14,6 @@ class TimeUnit implements JsonSerializable
     const HOUR = 3600000;
 
     const FORMAT_DEFAULT = "%H:%I:%S.%V";
-    const FORMAT_H_I_S_v = "%H:%I:%S.%v";
 
     const REGEX_DELIMITER = '#';
     const ESCAPE_CHARACTER = '%';
@@ -71,7 +70,7 @@ class TimeUnit implements JsonSerializable
      * @return TimeUnit
      * @throws Exception
      */
-    public static function fromFormat($timeUnitAsString, $formatString)
+    public static function fromFormat($timeUnitAsString, $formatString = self::FORMAT_DEFAULT)
     {
         $quotedFormatString = preg_quote($formatString, static::REGEX_DELIMITER);
         $placeHolderPositions = static::parsePlaceHolderPositions($quotedFormatString);
@@ -130,7 +129,7 @@ class TimeUnit implements JsonSerializable
      * @return string
      * @throws Exception
      */
-    public function format($formatString)
+    public function format($formatString = self::FORMAT_DEFAULT)
     {
         $placeholderPositions = $this->parsePlaceHolderPositions($formatString);
         $timeValues = $this->buildTimeValues($placeholderPositions);
