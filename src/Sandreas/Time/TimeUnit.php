@@ -4,6 +4,7 @@ namespace Sandreas\Time;
 
 use Exception;
 use JsonSerializable;
+use Throwable;
 
 class TimeUnit implements JsonSerializable
 {
@@ -88,7 +89,7 @@ class TimeUnit implements JsonSerializable
         $previous = null;
         try {
             $regexMatches = preg_match($pattern, $timeUnitAsString, $matches);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $regexMatches = false;
             $previous = $e;
         }

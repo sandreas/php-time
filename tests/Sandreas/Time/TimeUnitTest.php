@@ -2,6 +2,7 @@
 
 namespace Sandreas\Time;
 
+use Exception;
 use PHPUnit\Framework\TestCase;
 
 class TimeUnitTest extends TestCase
@@ -21,7 +22,7 @@ class TimeUnitTest extends TestCase
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function testFormat()
     {
@@ -51,7 +52,7 @@ class TimeUnitTest extends TestCase
     }
 
     /**
-     * @expectedException \Exception
+     * @expectedException Exception
      */
     public function testFormatException()
     {
@@ -61,7 +62,7 @@ class TimeUnitTest extends TestCase
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function testFormatNegative()
     {
@@ -72,7 +73,7 @@ class TimeUnitTest extends TestCase
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function testFromFormat()
     {
@@ -94,7 +95,7 @@ class TimeUnitTest extends TestCase
     }
 
     /**
-     * @expectedException \Exception
+     * @expectedException Exception
      * @expectedExceptionMessage Invalid format string (placeholder <%n> is not allowed)
      */
     public function testFromFormatInvalidPlaceholderException()
@@ -103,7 +104,7 @@ class TimeUnitTest extends TestCase
     }
 
     /**
-     * @expectedException \Exception
+     * @expectedException Exception
      * @expectedExceptionMessage Invalid format string (no match or invalid pattern <#(?P<H>[0-9]+)(?P<H>[0-9]+)(?P<H>[0-9]+)#>)
      */
     public function testFromFormatInvalidFormatStringException()
@@ -113,7 +114,7 @@ class TimeUnitTest extends TestCase
 
 
     /**
-     * @expectedException \Exception
+     * @expectedException Exception
      * @expectedExceptionMessage Invalid format string (placeholder <%> is not allowed - please use %% for a % sign)
      */
     public function testFromFormatInvalidFormatEmptyPlaceholderException()
@@ -122,7 +123,7 @@ class TimeUnitTest extends TestCase
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function testFromFormatPercentEscaping()
     {
@@ -131,7 +132,7 @@ class TimeUnitTest extends TestCase
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function testFormatPercentEscaping()
     {
@@ -140,7 +141,7 @@ class TimeUnitTest extends TestCase
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function testJsonSerialize()
     {
@@ -149,7 +150,7 @@ class TimeUnitTest extends TestCase
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function testToString()
     {
